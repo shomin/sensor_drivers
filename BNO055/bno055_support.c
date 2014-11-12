@@ -3,8 +3,8 @@
 * Copyright (C) 2014 Bosch Sensortec GmbH
 *
 * bno055_support.c
-* Date: 2014/10/06
-* Revision: 1.0.1 $
+* Date: 2014/11/12
+* Revision: 1.0.2 $
 *
 * Usage: Sensor Driver support file for BNO055 sensor
 *
@@ -59,19 +59,38 @@
  *	sensor data using I2C communication
 *----------------------------------------------------------------------------*/
 #ifdef	BNO055_API
+/*	\Brief: The function is used as I2C bus read
+ *	\Return : Status of the I2C read
+ *	\param dev_addr : The device address of the sensor
+ *	\param reg_addr : Address of the first register, will data is going to be read
+ *	\param reg_data : This data read from the sensor, which is hold in an array
+ *	\param cnt : The no of byte of data to be read
+ */
 s8 BNO055_I2C_bus_read(u8 dev_addr, u8 reg_addr, u8 *reg_data, u8 cnt);
+/*	\Brief: The function is used as SPI bus write
+ *	\Return : Status of the SPI write
+ *	\param dev_addr : The device address of the sensor
+ *	\param reg_addr : Address of the first register, will data is going to be written
+ *	\param reg_data : It is a value hold in the array,
+ *		will be used for write the value into the register
+ *	\param cnt : The no of byte of data to be write
+ */
 s8 BNO055_I2C_bus_write(u8 dev_addr, u8 reg_addr, u8 *reg_data, u8 cnt);
+/*
+ * \Brief: I2C init routine
+*/
 s8 I2C_routine(void);
-/************* Dummy function declaration*********/
-s32 I2C_write_read_string(s32 iPort, u8 ucDeviceAdress,
-u8 *ucWString, u8 *ucRString, s32 iCntW, s32 iCntR);
-s32 I2C_write_string(s32 iPort, u8 ucDeviceAdress, u8 *ucWString, s32 iCntW);
 #endif
-BNO055_RETURN_FUNCTION_TYPE bno055_read_sensor_data(void);
-/*----------------------------------------------------------------------------*
-*  The following function is used to set the delay in milliseconds
-*----------------------------------------------------------------------------*/
+/********************End of I2C function declarations***********************/
+/*	Brief : The delay routine
+ *	\param : delay in ms
+*/
 void BNO055_delay_msek(u32 msek);
+/* This function is an example for reading sensor data
+ *	\param: None
+ *	\return: communication result
+ */
+s32 bno055_data_readout_template(void);
 /*----------------------------------------------------------------------------*
  *  struct bno055_t parameters can be accessed by using BNO055
  *	BNO055_t having the following parameters
@@ -83,14 +102,15 @@ void BNO055_delay_msek(u32 msek);
  *	Chip id of the sensor: chip_id
 *---------------------------------------------------------------------------*/
 struct bno055_t bno055;
-/** main routine
+/* This function is an example for reading sensor data
+ *	\param: None
+ *	\return: communication result
  */
-
-BNO055_RETURN_FUNCTION_TYPE bno055_read_sensor_data(void)
+s32 bno055_data_readout_template(void)
 {
 	/* Variable used to return value of
 	communication routine*/
-	BNO055_RETURN_FUNCTION_TYPE comres = SUCCESS;
+	s32 comres = ERROR;
 	/* variable used to set the power mode of the sensor*/
 	u8 power_mode = 0;
 	/*********read raw accel data***********/
@@ -246,7 +266,7 @@ BNO055_RETURN_FUNCTION_TYPE bno055_read_sensor_data(void)
  *	Boot loader revision id
  *	Software revision id
  *-------------------------------------------------------------------------*/
-	comres += bno055_init(&bno055);
+	comres = bno055_init(&bno055);
 
 /*	For initializing the BNO sensor it is required to the operation mode
 	of the sensor as NORMAL
@@ -255,7 +275,7 @@ BNO055_RETURN_FUNCTION_TYPE bno055_read_sensor_data(void)
 	register - 0x3E
 	bit positions - 0 and 1*/
 	power_mode = 0x00; /* set the power mode as NORMAL*/
-	bno055_set_power_mode(power_mode);
+	comres += bno055_set_power_mode(power_mode);
 /*--------------------------------------------------------------------------*
 ************************* END INITIALIZATION *************************
 *---------------------------------------------------------------------------*/
@@ -432,6 +452,7 @@ BNO055_RETURN_FUNCTION_TYPE bno055_read_sensor_data(void)
 *---------------------------------------------------------------------*/
 return comres;
 }
+
 #ifdef	BNO055_API
 /*--------------------------------------------------------------------------*
 *	The following function is used to map the I2C bus read, write, delay and
@@ -453,55 +474,79 @@ return comres;
 
 	return 0;
 }
-/************** Dummy variable definitions******/
+
+/************** I2C buffer length******/
+
 #define	I2C_BUFFER_LEN 8
 #define I2C0 5
 /*-------------------------------------------------------------------*
 *
 *	This is a sample code for read and write the data by using I2C
 *	Use either I2C  based on your need
-*	Configure the below code to your I2C driver
+*	The device address defined in the bno055.h file
 *
 *-----------------------------------------------------------------------*/
-/*	\Brief: The function is used as I2C bus read
- *	\Return : Status of the I2C read
- *	\param dev_addr : The device address of the device
- *	\param reg_addr : Address of the register
- *	\param reg_data : The value of the register
- *	\param cnt : The no of data to be read */
- s8 BNO055_I2C_bus_read(u8 dev_addr, u8 reg_addr, u8 *reg_data, u8 cnt)
-{
-	s32 iError = 0;
-	u8 array[I2C_BUFFER_LEN] = {0};
-	u8 stringpos = 0;
-	array[0] = reg_addr;
-	iError = I2C_write_read_string(I2C0, dev_addr, array, array, 1, cnt);
-	for (stringpos=0;stringpos<cnt;stringpos++) {
-		*(reg_data + stringpos) = array[stringpos];
-	}
-	return (s8)iError;
-}
+
 /*	\Brief: The function is used as I2C bus write
  *	\Return : Status of the I2C write
- *	\param dev_addr : The device address of the device
- *	\param reg_addr : Address of the register
- *	\param reg_data : The value of the register
- *	\param cnt : The no of data to be read */
+ *	\param dev_addr : The device address of the sensor
+ *	\param reg_addr : Address of the first register, will data is going to be written
+ *	\param reg_data : It is a value hold in the array,
+ *		will be used for write the value into the register
+ *	\param cnt : The no of byte of data to be write
+ */
 s8 BNO055_I2C_bus_write(u8 dev_addr, u8 reg_addr, u8 *reg_data, u8 cnt)
 {
 	s32 iError = 0;
 	u8 array[I2C_BUFFER_LEN];
 	u8 stringpos = 0;
 	array[0] = reg_addr;
-	for (stringpos=0;stringpos<cnt;stringpos++) {
-		array[stringpos+1] = *(reg_data + stringpos);
+	for (stringpos = 0; stringpos < cnt; stringpos++) {
+		array[stringpos + 1] = *(reg_data + stringpos);
 	}
-	/* This is a full duplex operation,
-	The first read data is discarded, for that extra write operation
-	have to be initiated. For that cnt+1 operation done in the spi read
-	and write string function
-	Note: For more information please refer data sheet SPI communication:*/
-	iError = I2C_write_string(I2C0, dev_addr, array, cnt+1);
+	/*
+	* Please take the below function as your reference for
+	* write the data using I2C communication
+	* "IERROR = I2C_WRITE_STRING(DEV_ADDR, ARRAY, CNT+1)"
+	* add your I2C write function here
+	* iError is an return value of I2C read function
+	* Please select your valid return value
+	* In the driver SUCCESS defined as 0
+    * and FAILURE defined as -1
+	* Note :
+	* This is a full duplex operation,
+	* The first read data is discarded, for that extra write operation
+	* have to be initiated. For that cnt+1 operation done in the I2C write string function
+	* For more information please refer data sheet SPI communication:
+	*/
+	return (s8)iError;
+}
+
+ /*	\Brief: The function is used as I2C bus read
+ *	\Return : Status of the I2C read
+ *	\param dev_addr : The device address of the sensor
+ *	\param reg_addr : Address of the first register, will data is going to be read
+ *	\param reg_data : This data read from the sensor, which is hold in an array
+ *	\param cnt : The no of byte of data to be read
+ */
+s8 BNO055_I2C_bus_read(u8 dev_addr, u8 reg_addr, u8 *reg_data, u8 cnt)
+{
+	s32 iError = 0;
+	u8 array[I2C_BUFFER_LEN] = {0};
+	u8 stringpos = 0;
+	array[0] = reg_addr;
+	/* Please take the below function as your reference
+	 * for read the data using I2C communication
+	 * add your I2C rad function here.
+	 * "IERROR = I2C_WRITE_READ_STRING(DEV_ADDR, ARRAY, ARRAY, 1, CNT)"
+	 * iError is an return value of SPI write function
+	 * Please select your valid return value
+     * In the driver SUCCESS defined as 0
+     * and FAILURE defined as -1
+	 */
+	for (stringpos = 0; stringpos < cnt; stringpos++) {
+		*(reg_data + stringpos) = array[stringpos];
+	}
 	return (s8)iError;
 }
 /*	Brief : The delay routine
@@ -509,17 +554,7 @@ s8 BNO055_I2C_bus_write(u8 dev_addr, u8 reg_addr, u8 *reg_data, u8 cnt)
 */
 void BNO055_delay_msek(u32 msek)
 {
-	/*user delay routine*/
+	/*Here you can write your own delay routine*/
 }
 
-/************** Dummy functions***************/
-s32 I2C_write_read_string(s32 iPort, u8 ucDeviceAdress,
-u8 *ucWString, u8 *ucRString, s32 iCntW, s32 iCntR) {
-	return 0;
-}
-
-s32 I2C_write_string(s32 iPort, u8 ucDeviceAdress, u8 *ucWString, s32 iCntW)
-{
-	return 0;
-}
 #endif

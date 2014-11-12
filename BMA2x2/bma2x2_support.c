@@ -3,8 +3,8 @@
 * Copyright (C) 2014 Bosch Sensortec GmbH
 *
 * bma2x2_support.c
-* Date: 2014/09/11
-* Revision: 1.0 $
+* Date: 2014/11/12
+* Revision: 1.0.1 $
 *
 * Usage: Sensor Driver support file for  BMA2x2 sensor
 *
@@ -59,25 +59,55 @@
 *	sensor data using I2C or SPI communication
 *----------------------------------------------------------------------------*/
 #ifdef BMA2x2_API
+ /*	\Brief: The function is used as I2C bus read
+ *	\Return : Status of the I2C read
+ *	\param dev_addr : The device address of the sensor
+ *	\param reg_addr : Address of the first register, will data is going to be read
+ *	\param reg_data : This data read from the sensor, which is hold in an array
+ *	\param cnt : The no of byte of data to be read
+ */
 s8 BMA2x2_I2C_bus_read(u8 dev_addr, u8 reg_addr, u8 *reg_data, u8 cnt);
+ /*	\Brief: The function is used as I2C bus write
+ *	\Return : Status of the I2C write
+ *	\param dev_addr : The device address of the sensor
+ *	\param reg_addr : Address of the first register, will data is going to be written
+ *	\param reg_data : It is a value hold in the array,
+ *		will be used for write the value into the register
+ *	\param cnt : The no of byte of data to be write
+ */
 s8 BMA2x2_I2C_bus_write(u8 dev_addr, u8 reg_addr, u8 *reg_data, u8 cnt);
+/*	\Brief: The function is used as SPI bus write
+ *	\Return : Status of the SPI write
+ *	\param dev_addr : The device address of the sensor
+ *	\param reg_addr : Address of the first register, will data is going to be written
+ *	\param reg_data : It is a value hold in the array,
+ *		will be used for write the value into the register
+ *	\param cnt : The no of byte of data to be write
+ */
 s8 BMA2x2_SPI_bus_write(u8 dev_addr, u8 reg_addr, u8 *reg_data, u8 cnt);
+/*	\Brief: The function is used as SPI bus read
+ *	\Return : Status of the SPI read
+ *	\param dev_addr : The device address of the sensor
+ *	\param reg_addr : Address of the first register, will data is going to be read
+ *	\param reg_data : This data read from the sensor, which is hold in an array
+ *	\param cnt : The no of byte of data to be read */
 s8 BMA2x2_SPI_bus_read(u8 dev_addr, u8 reg_addr, u8 *reg_data, u8 cnt);
-s8 BMA2x2_SPI_burst_read(u8 dev_addr, u8 reg_addr, u8 *reg_data, s32 cnt);
+/*
+ * \Brief: SPI/I2C init routine
+*/
 s8 I2C_routine(void);
 s8 SPI_routine(void);
-/************* Dummy function declaration*********/
-s32 SPI_write_string(s32 iPort, u8 *ucWString, s32 iCnt);
-s32 I2C_write_read_string(s32 iPort, u8 ucDeviceAdress,
-u8 *ucWString, u8 *ucRString, s32 iCntW, s32 iCntR);
-s32 I2C_write_string(s32 iPort, u8 ucDeviceAdress, u8 *ucWString, s32 iCntW);
-s32 SPI_read_write_string(s32 iPort, u8 *ucWString, u8 *ucRString, s32 iCnt);
 #endif
-/*----------------------------------------------------------------------------*
-*  The following function is used to set the delay in milliseconds
-*----------------------------------------------------------------------------*/
+/********************End of I2C/SPI function declarations***********************/
+/*	Brief : The delay routine
+ *	\param : delay in ms
+ */
 void BMA2x2_delay_msek(u32 msek);
-s32 bma2x2_initialize(void);
+/* This function is an example for reading sensor data
+ *	\param: None
+ *	\return: communication result
+ */
+s32 bma2x2_data_readout_template(void);
 /*----------------------------------------------------------------------------*
 *  struct bma2x2_t parameters can be accessed by using bma2x2
  *	bma2x2_t having the following parameters
@@ -96,13 +126,11 @@ struct bma2x2_t bma2x2;
  *	10 bit
 *----------------------------------------------------------------------------*/
 extern u8 V_BMA2x2RESOLUTION_u8R;
-
-/*---------------------------------------------------------------------------*/
-
-/** initialize routine
+/* This function is an example for reading sensor data
+ *	\param: None
+ *	\return: communication result
  */
-
-s32 bma2x2_initialize(void)
+s32 bma2x2_data_readout_template(void)
 {
 	/*Local variables for reading accel x, y and z data*/
 	s16	v_accel_x_s16, v_accel_y_s16, v_accel_z_s16 = 0;
@@ -115,6 +143,8 @@ s32 bma2x2_initialize(void)
 	u8 v_bw_value_u8 = 0;
 	/* Local variable used to set the bandwidth value*/
 	u8 banwid = 0;
+	/* status of communication*/
+	s32 com_rslt = ERROR;
 
 
 /*********************** START INITIALIZATION ************************
@@ -132,7 +162,7 @@ s32 bma2x2_initialize(void)
  *	Bus read
  *	Chip id
  *-------------------------------------------------------------------------*/
-	bma2x2_init(&bma2x2);
+	com_rslt = bma2x2_init(&bma2x2);
 
 /*	For initialization it is required to set the mode of
  *	the sensor as "NORMAL"
@@ -144,7 +174,7 @@ s32 bma2x2_initialize(void)
  *	For the Normal/standby/Low power 2 mode Idle time of at least 2us(micro seconds)
  *	required for read/write operations*/
 	/* Set the power mode as NORMAL*/
-	bma2x2_set_power_mode(BMA2x2_MODE_NORMAL);
+	com_rslt += bma2x2_set_power_mode(BMA2x2_MODE_NORMAL);
 /*	Note:
 	*	For the Suspend/Low power1 mode Idle time of at least 450us(micro seconds)
 	*	required for read/write operations*/
@@ -158,27 +188,27 @@ s32 bma2x2_initialize(void)
 	value have to be given
 	bandwidth is set from the register 0x10 bits from 1 to 4*/
 	v_bw_value_u8 = 0x08;/* set bandwidth of 7.81Hz*/
-	bma2x2_set_bw(v_bw_value_u8);
+	com_rslt += bma2x2_set_bw(v_bw_value_u8);
 
 	/* This API used to read back the written value of bandwidth*/
-	bma2x2_get_bw(&banwid);
+	com_rslt += bma2x2_get_bw(&banwid);
 /*-----------------------------------------------------------------*
 ************************* END GET and SET FUNCTIONS ****************
 *-------------------------------------------------------------------*/
 /*------------------------------------------------------------------*
 ************************* START READ SENSOR DATA(X,Y and Z axis) ********
 *---------------------------------------------------------------------*/
-	bma2x2_read_accel_x(&v_accel_x_s16);/* Read the accel X data*/
+	com_rslt += bma2x2_read_accel_x(&v_accel_x_s16);/* Read the accel X data*/
 
-	bma2x2_read_accel_y(&v_accel_y_s16);/* Read the accel Y data*/
+	com_rslt += bma2x2_read_accel_y(&v_accel_y_s16);/* Read the accel Y data*/
 
-	bma2x2_read_accel_z(&v_accel_z_s16);/* Read the accel Z data*/
+	com_rslt += bma2x2_read_accel_z(&v_accel_z_s16);/* Read the accel Z data*/
 
 	/* accessing the bma2x2acc_data parameter by using sample_xyz*/
-	bma2x2_read_accel_xyz(&sample_xyz);/* Read the accel XYZ data*/
+	com_rslt += bma2x2_read_accel_xyz(&sample_xyz);/* Read the accel XYZ data*/
 
 	/* accessing the bma2x2acc_data_temp parameter by using sample_xyzt*/
-	bma2x2_read_accel_xyzt(&sample_xyzt);/* Read the accel XYZT data*/
+	com_rslt += bma2x2_read_accel_xyzt(&sample_xyzt);/* Read the accel XYZT data*/
 
 /*--------------------------------------------------------------------*
 ************************* END READ SENSOR DATA(X,Y and Z axis) ************
@@ -195,12 +225,13 @@ s32 bma2x2_initialize(void)
  *	No data acquisition is performed
  *	by using the below API able to set the power mode as DEEPSUSPEND*/
  /* Set the power mode as DEEPSUSPEND*/
-	bma2x2_set_power_mode(BMA2x2_MODE_DEEP_SUSPEND);
+	com_rslt += bma2x2_set_power_mode(BMA2x2_MODE_DEEP_SUSPEND);
 /*---------------------------------------------------------------------*
 ************************* END DE-INITIALIZATION **********************
 *---------------------------------------------------------------------*/
-return 0;
+return com_rslt;
 }
+
 #ifdef BMA2x2_API
 /*--------------------------------------------------------------------------*
 *	The following function is used to map the I2C bus read, write, delay and
@@ -221,6 +252,7 @@ s8 I2C_routine(void) {
 
 	return 0;
 }
+
 /*---------------------------------------------------------------------------*
  * The following function is used to map the SPI bus read, write and delay
  * with global structure bma2x2_t
@@ -239,16 +271,14 @@ s8 SPI_routine(void) {
 
 	return 0;
 }
-/************** Dummy variable definitions******/
+
+/************** I2C/SPI buffer length ******/
 #define	I2C_BUFFER_LEN 8
 #define SPI_BUFFER_LEN 5
 
-#define I2C0 5
-#define SPI1 2
 /*-------------------------------------------------------------------*
 *	This is a sample code for read and write the data by using I2C/SPI
 *	Use either I2C or SPI based on your need
-*	Configure the below code to your SPI or I2C driver
 *
 *-----------------------------------------------------------------------*/
 /*	For configuring the I2C it is required to switch ON
@@ -275,53 +305,75 @@ s8 SPI_routine(void) {
  #define BMA2x2_I2C_ADDR3                0x10
  #define BMA2x2_I2C_ADDR4                0x11
  *************************************************************************/
- /*	\Brief: The function is used as I2C bus read
- *	\Return : Status of the I2C read
- *	\param dev_addr : The device address of the device
- *	\param reg_addr : Address of the register
- *	\param reg_data : The value of the register
- *	\param cnt : The no of data to be read */
-s8 BMA2x2_I2C_bus_read(u8 dev_addr, u8 reg_addr, u8 *reg_data, u8 cnt)
-{
-	s32 iError = 0;
-	u8 array[I2C_BUFFER_LEN] = {0};
-	u8 stringpos = 0;
-	array[0] = reg_addr;
-	iError = I2C_write_read_string(I2C0, dev_addr, array, array, 1, cnt);
-	for (stringpos=0;stringpos<cnt;stringpos++) {
-		*(reg_data + stringpos) = array[stringpos];
-	}
-	return (s8)iError;
-}
-/*	\Brief: The function is used as I2C bus write
+ /*	\Brief: The function is used as I2C bus write
  *	\Return : Status of the I2C write
- *	\param dev_addr : The device address of the device
- *	\param reg_addr : Address of the register
- *	\param reg_data : The value of the register
- *	\param cnt : The no of data to be read */
+ *	\param dev_addr : The device address of the sensor
+ *	\param reg_addr : Address of the first register, will data is going to be written
+ *	\param reg_data : It is a value hold in the array,
+ *		will be used for write the value into the register
+ *	\param cnt : The no of byte of data to be write
+ */
 s8 BMA2x2_I2C_bus_write(u8 dev_addr, u8 reg_addr, u8 *reg_data, u8 cnt)
 {
 	s32 iError = 0;
 	u8 array[I2C_BUFFER_LEN];
 	u8 stringpos = 0;
 	array[0] = reg_addr;
-	for (stringpos=0;stringpos<cnt;stringpos++) {
-		array[stringpos+1] = *(reg_data + stringpos);
+	for (stringpos = 0; stringpos < cnt; stringpos++) {
+		array[stringpos + 1] = *(reg_data + stringpos);
 	}
-	/* This is a full duplex operation,
-	The first read data is discarded, for that extra write operation
-	have to be initiated. For that cnt+1 operation done in the spi read
-	and write string function
-	Note: For more information please refer data sheet SPI communication:*/
-	iError = I2C_write_string(I2C0, dev_addr, array, cnt+1);
+	/*
+	* Please take the below function as your reference for
+	* write the data using I2C communication
+	* "IERROR = I2C_WRITE_STRING(DEV_ADDR, ARRAY, CNT+1)"
+	* add your I2C write function here
+	* iError is an return value of I2C read function
+	* Please select your valid return value
+	* In the driver SUCCESS defined as 0
+    * and FAILURE defined as -1
+	* Note :
+	* This is a full duplex operation,
+	* The first read data is discarded, for that extra write operation
+	* have to be initiated. For that cnt+1 operation done in the I2C write string function
+	* For more information please refer data sheet SPI communication:
+	*/
 	return (s8)iError;
 }
+
+ /*	\Brief: The function is used as I2C bus read
+ *	\Return : Status of the I2C read
+ *	\param dev_addr : The device address of the sensor
+ *	\param reg_addr : Address of the first register, will data is going to be read
+ *	\param reg_data : This data read from the sensor, which is hold in an array
+ *	\param cnt : The no of byte of data to be read
+ */
+s8 BMA2x2_I2C_bus_read(u8 dev_addr, u8 reg_addr, u8 *reg_data, u8 cnt)
+{
+	s32 iError = 0;
+	u8 array[I2C_BUFFER_LEN] = {0};
+	u8 stringpos = 0;
+	array[0] = reg_addr;
+	/* Please take the below function as your reference
+	 * for read the data using I2C communication
+	 * add your I2C rad function here.
+	 * "IERROR = I2C_WRITE_READ_STRING(DEV_ADDR, ARRAY, ARRAY, 1, CNT)"
+	 * iError is an return value of SPI write function
+	 * Please select your valid return value
+     * In the driver SUCCESS defined as 0
+     * and FAILURE defined as -1
+	 */
+	for (stringpos = 0; stringpos < cnt; stringpos++) {
+		*(reg_data + stringpos) = array[stringpos];
+	}
+	return (s8)iError;
+}
+
 /*	\Brief: The function is used as SPI bus read
  *	\Return : Status of the SPI read
- *	\param dev_addr : The device address of the device
- *	\param reg_addr : Address of the register
- *	\param reg_data : The value of the register
- *	\param cnt : The no of data to be read */
+ *	\param dev_addr : The device address of the sensor
+ *	\param reg_addr : Address of the first register, will data is going to be read
+ *	\param reg_data : This data read from the sensor, which is hold in an array
+ *	\param cnt : The no of byte of data to be read */
 s8 BMA2x2_SPI_bus_read(u8 dev_addr, u8 reg_addr, u8 *reg_data, u8 cnt)
 {
 	s32 iError=0;
@@ -331,87 +383,65 @@ s8 BMA2x2_SPI_bus_read(u8 dev_addr, u8 reg_addr, u8 *reg_data, u8 cnt)
 	The MSB of register address is declared the bit what functionality it is
 	read/write (read as 1/write as 0)*/
 	array[0] = reg_addr|0x80;/*read routine is initiated register address is mask with 0x80*/
-	/* This is a full duplex operation,
-	The first read data is discarded, for that extra write operation
-	have to be initiated. For that cnt+1 operation done in the spi read
-	and write string function
-	Note: For more information please refer data sheet SPI communication:*/
-	iError = SPI_read_write_string(SPI1, array, array, cnt+1);
-	for (stringpos=0;stringpos<cnt;stringpos++) {
+	/*
+	* Please take the below function as your reference for
+	* read the data using SPI communication
+	* " IERROR = SPI_READ_WRITE_STRING(ARRAY, ARRAY, CNT+1)"
+	* add your SPI read function here
+	* iError is an return value of SPI read function
+	* Please select your valid return value
+	* In the driver SUCCESS defined as 0
+    * and FAILURE defined as -1
+	* Note :
+	* This is a full duplex operation,
+	* The first read data is discarded, for that extra write operation
+	* have to be initiated. For that cnt+1 operation done in the SPI read
+	* and write string function
+	* For more information please refer data sheet SPI communication:
+	*/
+	for (stringpos = 0; stringpos < cnt; stringpos++) {
 		*(reg_data + stringpos) = array[stringpos+1];
 	}
 	return (s8)iError;
 }
+
 /*	\Brief: The function is used as SPI bus write
  *	\Return : Status of the SPI write
- *	\param dev_addr : The device address of the device
- *	\param reg_addr : Address of the register
- *	\param reg_data : The value of the register
- *	\param cnt : The no of data to be read */
+ *	\param dev_addr : The device address of the sensor
+ *	\param reg_addr : Address of the first register, will data is going to be written
+ *	\param reg_data : It is a value hold in the array,
+ *		will be used for write the value into the register
+ *	\param cnt : The no of byte of data to be write
+ */
 s8 BMA2x2_SPI_bus_write(u8 dev_addr, u8 reg_addr, u8 *reg_data, u8 cnt)
 {
 	s32 iError = 0;
-	u8 array[SPI_BUFFER_LEN*2];
+	u8 array[SPI_BUFFER_LEN * 2];
 	u8 stringpos = 0;
-	for (stringpos=0;stringpos<cnt;stringpos++) {
+	for (stringpos = 0; stringpos < cnt; stringpos++) {
 		/* the operation of (reg_addr++)&0x7F done: because it ensure the
 		   0 and 1 of the given value
 		   It is done only for 8bit operation*/
-		array[stringpos*2] = (reg_addr++)&0x7F;
-		array[stringpos*2+1] = *(reg_data + stringpos);
+		array[stringpos * 2] = (reg_addr++) & 0x7F;
+		array[stringpos * 2 + 1] = *(reg_data + stringpos);
 	}
-	iError = SPI_write_string(SPI1, array, cnt*2);
+	/* Please take the below function as your reference
+	 * for write the data using SPI communication
+	 * add your SPI write function here.
+	 * "IERROR = SPI_WRITE_STRING(ARRAY, CNT*2)"
+	 * iError is an return value of SPI write function
+	 * Please select your valid return value
+	 * In the driver SUCCESS defined as 0
+     * and FAILURE defined as -1
+	 */
 	return (s8)iError;
 }
-/*	\Brief: The function is used as SPI burst read
- *	\Return : Status of the SPI burst read
- *	\param dev_addr : The device address of the device
- *	\param reg_addr : Address of the register
- *	\param reg_data : The value of the register
- *	\param cnt : The no of data to be read */
-s8 BMA2x2_SPI_burst_read(u8 dev_addr, u8 reg_addr, u8 *reg_data, s32 cnt)
-{
-	s32 iError = 0;
-	#ifdef INCLUDE_BMA2x2API
-	U32 stringpos;
-	/*	For the SPI mode only 7 bits of register addresses are used.
-	The MSB of register address is declared the bit what functionality it is
-	read/write (read as 1/write as 0)*/
-	Data_u8R[0] = reg_addr|0x80;/*read routine is initiated register address is mask with 0x80*/
-	/* This is a full duplex operation,
-	The first read data is discarded, for that extra write operation
-	have to be initiated. For that cnt+1 operation done in the spi read
-	and write string function
-	Note: For more information please refer data sheet SPI communication:*/
-	iError = SPI_burst_read(SPI1, Data_u8R, Data_u8R, cnt+1);
-	for (stringpos=0;stringpos<cnt;stringpos++) {
-		*(reg_data + stringpos) = Data_u8R[stringpos+1];
-	}
-	#endif
-	return (s8)iError;
-}
+
 /*	Brief : The delay routine
  *	\param : delay in ms
 */
 void BMA2x2_delay_msek(u32 msek)
 {
-	/*user delay code*/
-}
-/************** Dummy functions***************/
-s32 SPI_write_string(s32 iPort, u8 *ucWString, s32 iCnt){
-	return 0;
-}
-
-s32 I2C_write_read_string(s32 iPort, u8 ucDeviceAdress,
-u8 *ucWString, u8 *ucRString, s32 iCntW, s32 iCntR){
-	return 0;
-}
-
-s32 I2C_write_string(s32 iPort, u8 ucDeviceAdress, u8 *ucWString, s32 iCntW){
-	return 0;
-}
-
-s32 SPI_read_write_string(s32 iPort, u8 *ucWString, u8 *ucRString, s32 iCnt){
-	return 0;
+	/*Here you can write your own delay routine*/
 }
 #endif
