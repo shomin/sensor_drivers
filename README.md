@@ -29,17 +29,18 @@ sensor.h file:
 
 sensor.c file:
 ###
-  - This file contains the implementation for all the sensor driver APIs.
+	- This file contains the implementation for all the sensor driver APIs.
 	
 sensor_support.c
 ###
-  - This file shall be used as an user guidance, here you can find samples of
-    - Initialize the sensor with I2C/SPI communication
-      - Add your code to the SPI and/or I2C bus read and bus write functions.
-        - Return value can be chosen by yourself, API just passes that value to your application code
+	- This file shall be used as an user guidance, here you can find samples of
+		- Initialize the sensor with I2C/SPI communication
+			- Add your code to the SPI and/or I2C bus read and bus write functions.
+				- Return value can be chosen by yourself
+				- API just passes that value to your application code
 			- Add your code to the delay function
 			- Change I2C address accordingly in sensor.h
-		-  Power mode configuration of the sensor
-		-  Get and set functions usage
-		-  Reading the sensor read out data
+		- Power mode configuration of the sensor
+		- Get and set functions usage
+		- Reading the sensor read out data
 
